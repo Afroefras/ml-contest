@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Competencia de Machine Learning</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h1 class="mt-4">Competencia de Machine Learning</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="mt-3">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+    
+    <form method="POST" enctype="multipart/form-data" class="mt-4">
+        <div class="form-group">
+            <label for="student_name">Nombre del Estudiante</label>
+            <input type="text" class="form-control" id="student_name" name="student_name" required>
+        </div>
+        <div class="form-group">
+            <label for="file">Subir archivo CSV</label>
+            <input type="file" class="form-control-file" id="file" name="file" accept=".csv" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Subir Predicciones</button>
+    </form>
+    
+    <h2 class="mt-5">Ranking</h2>
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Nombre del Estudiante</th>
+                <th>Score</th>
+                <th>Fecha y Hora</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for submission in ranking %}
+            <tr>
+                <td>{{ submission.student_name }}</td>
+                <td>{{ submission.score | round(4) }}</td>
+                <td>{{ submission.timestamp }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
