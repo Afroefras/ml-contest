@@ -1,22 +1,34 @@
-# Usa una imagen base de Python
-FROM python:3.10
+# Usa una imagen base de Python 3.10.6
+FROM python:3.10.6-slim
 
-# Establece el directorio de trabajo en /app
+# Configura variables de entorno
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV FLASK_APP=app.py
+ENV FLASK_RUN_HOST=0.0.0.0
+
+# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia los archivos de Pipenv para instalar las dependencias
-COPY Pipfile Pipfile.lock ./
+# Copia los archivos necesarios
+COPY . /app/
 
-# Instala pipenv y las dependencias definidas en el Pipfile
-RUN pip install --upgrade pip && \
-    pip install pipenv && \
-    pipenv install --deploy --ignore-pipfile
+# Instala pipenv
+RUN pip install --no-cache-dir pipenv
 
-# Copia el resto de la aplicación al contenedor
-COPY . .
+# Instala las dependencias usando Pipfile
+# Si no tienes un Pipfile, comenta estas líneas y usa requirements.txt
+RUN pipenv install --deploy --system
 
-# Expone el puerto en el que la app va a correr
+# Alternativa: si prefieres usar requirements.txt
+# COPY requirements.txt /app/
+# RUN pip install --no-cache-dir -r requirements.txt
+
+# Asegúrate de que la carpeta de uploads exista
+RUN mkdir -p uploads
+
+# Expone el puerto 5000
 EXPOSE 5000
 
-# Comando para iniciar la aplicación usando pipenv
-CMD ["pipenv", "run", "python", "app.py"]
+# Comando para ejecutar la aplicación
+CMD ["python", "app.py"]
