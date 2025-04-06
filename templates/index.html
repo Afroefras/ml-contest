@@ -55,6 +55,7 @@
                     </div>
                     <div class="card-body">
                         <form method="POST" enctype="multipart/form-data" class="submission-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <div class="mb-3">
                                 <label for="student_id" class="form-label">Tu número de registro, plox:</label>
                                 <input type="text" class="form-control" id="student_id" name="student_id" required>

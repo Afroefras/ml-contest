@@ -3,6 +3,7 @@ import pytz
 import pandas as pd
 from sqlalchemy import func
 from datetime import datetime
+from flask_wtf.csrf import CSRFProtect
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from eval_predictions import PredictionEvaluator, load_students
@@ -12,7 +13,9 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///submissions.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['SECRET_KEY'] = 'tu_clave_secreta'  # Necesario para flash messages
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key')
+
+csrf = CSRFProtect(app)
 
 # Asegúrate de que la carpeta de uploads exista
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

@@ -20,10 +20,6 @@ RUN pip install --no-cache-dir pipenv
 # Si no tienes un Pipfile, comenta estas líneas y usa requirements.txt
 RUN pipenv install --deploy --system
 
-# Alternativa: si prefieres usar requirements.txt
-# COPY requirements.txt /app/
-# RUN pip install --no-cache-dir -r requirements.txt
-
 # Asegúrate de que la carpeta de uploads exista
 RUN mkdir -p uploads
 
