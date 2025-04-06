@@ -1,9 +1,8 @@
 import os
-import pandas as pd
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
-from sklearn.metrics import f1_score, mean_absolute_percentage_error
+from eval_predictions import PredictionEvaluator
 from flask import Flask, render_template, request, redirect, url_for, flash
 
 app = Flask(__name__)
@@ -27,58 +26,6 @@ class Submission(db.Model):
 
     def __repr__(self):
         return f'<Submission {self.student_name}>'
-
-# Función para evaluar las predicciones
-def evaluate_predictions(predictions_file, task_type='classification'):
-    # Cargar las predicciones del estudiante
-    try:
-        predictions = pd.read_csv(predictions_file)
-    except Exception as e:
-        return 0, f"Error al leer el archivo: {str(e)}"
-    
-    # Cargar las etiquetas verdaderas
-    try:
-        true_labels = pd.read_csv('true_labels.csv')
-    except Exception as e:
-        return 0, f"Error al leer las etiquetas verdaderas: {str(e)}"
-    
-    # Verificar que los archivos tengan la misma estructura
-    if 'id' not in predictions.columns or 'target' not in predictions.columns:
-        return 0, "El archivo debe tener columnas 'id' y 'target'"
-    
-    if 'id' not in true_labels.columns or 'target' not in true_labels.columns:
-        return 0, "Error en el archivo de etiquetas verdaderas"
-    
-    # Fusionar por ID para asegurarse de que están en el mismo orden
-    merged = predictions.merge(
-        right=true_labels,
-        how='right',
-        on='id',
-        suffixes=('_pred', '_true')
-    ).fillna(-1)
-    
-    if len(merged) == 0:
-        return 0, "No se encontraron coincidencias entre IDs"
-    
-    # Calcular el score según el tipo de tarea
-    try:
-        if task_type == 'classification':
-            score = f1_score(merged['target_true'], merged['target_pred'], average='weighted')
-        else:  # regresión
-            # Evitar división por cero en MAPE
-            non_zero_mask = merged['target_true'] != 0
-            if non_zero_mask.sum() == 0:
-                return 0, "No se puede calcular MAPE porque todos los valores verdaderos son cero"
-            score = mean_absolute_percentage_error(
-                merged.loc[non_zero_mask, 'target_true'], 
-                merged.loc[non_zero_mask, 'target_pred']
-            )
-            # Para MAPE, menor es mejor, así que convertimos para que mayor sea mejor
-            score = 1 / (1 + score)
-        
-        return score, None
-    except Exception as e:
-        return 0, f"Error al calcular el score: {str(e)}"
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -106,8 +53,8 @@ def index():
             file.save(filepath)
             
             # Evaluar predicciones
-            # Puedes cambiar 'classification' por 'regression' según tu tarea
-            score, error = evaluate_predictions(filepath, task_type='classification')
+            pe = PredictionEvaluator(true_labels_path='true_labels.csv')
+            score, error = pe.evaluate_predictions(filepath, task_type='classification')
             
             if error:
                 flash(f'Error: {error}')
