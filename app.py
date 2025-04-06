@@ -1,5 +1,7 @@
 import os
+import pytz
 import pandas as pd
+from sqlalchemy import func
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
@@ -95,7 +97,19 @@ def index():
             return redirect(url_for('index'))
     
     # Obtener el ranking
-    submissions = Submission.query.order_by(Submission.score.desc()).all()
+    submissions = db.session.query(
+        Submission.student_name,
+        func.max(Submission.score).label('max_score'),
+        func.min(Submission.score).label('min_score'),
+        func.avg(Submission.score).label('avg_score'),
+        func.count(Submission.score).label('score_count'),
+        func.max(Submission.timestamp).label('last_update_at')
+    ).group_by(Submission.student_name).order_by(
+            func.max(Submission.score).desc(),
+            func.count(Submission.score).asc(),
+            func.min(Submission.score).desc(),
+            func.max(Submission.timestamp).asc()
+        ).all()
     
     return render_template('index.html', submissions=submissions)
 

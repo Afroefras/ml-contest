@@ -85,8 +85,11 @@
                                         <tr>
                                             <th>Posición</th>
                                             <th>Nombre</th>
-                                            <th>Score</th>
-                                            <th>Fecha/Hora</th>
+                                            <th>Max Score</th>
+                                            <th>Min Score</th>
+                                            <th>Avg Score</th>
+                                            <th>Archivos</th>
+                                            <th>Último archivo</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -94,8 +97,11 @@
                                             <tr>
                                                 <td>{{ loop.index }}</td>
                                                 <td>{{ submission.student_name }}</td>
-                                                <td>{{ "%.4f"|format(submission.score) }}</td>
-                                                <td>{{ submission.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                                <td>{{ "%.4f"|format(submission.max_score) }}</td>
+                                                <td>{{ "%.4f"|format(submission.min_score) }}</td>
+                                                <td>{{ "%.4f"|format(submission.avg_score) }}</td>
+                                                <td>{{ "%.0f"|format(submission.score_count) }}</td>
+                                                <td>{{ submission.last_update_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
