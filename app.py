@@ -26,7 +26,7 @@ class Submission(db.Model):
     student_name = db.Column(db.String(100), nullable=False)
     filename = db.Column(db.String(100), nullable=False)
     score = db.Column(db.Float, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, nullable=False)
 
     def __repr__(self):
         return f'<Submission {self.student_id}>'
@@ -79,7 +79,8 @@ def index():
                 return redirect(url_for('index'))
             
             # Guardar el archivo
-            filename = secure_filename(f"{student_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{student_name}.csv")
+            now_datetime = datetime.now(pytz.timezone('America/Mexico_City'))
+            filename = secure_filename(f"{student_id}_{now_datetime.strftime('%Y%m%d_%H%M%S')}.csv")
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             predictions.to_csv(filepath, index=False)
             
@@ -88,7 +89,8 @@ def index():
                 student_id=student_id,
                 student_name=student_name,
                 filename=filename,
-                score=score
+                score=score,
+                timestamp=now_datetime,
             )
             db.session.add(submission)
             db.session.commit()
