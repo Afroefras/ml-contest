@@ -57,51 +57,45 @@ class PredictionEvaluator:
             return False, msg
         return True, None
 
-    def evaluate_predictions(self, predictions_file, task_type='classification'):
+    def evaluate_predictions(self, predictions, task_type='classification'):
         """
         Evalúa las predicciones comparándolas con las etiquetas verdaderas.
         
         Pasos:
-        1. Cargar el archivo CSV con las predicciones.
-        2. Validar que el archivo contenga las columnas 'id' y 'target'.
-        3. Validar que el archivo de etiquetas verdaderas también tenga las columnas 'id' y 'target'.
-        4. Validar que los IDs en el archivo de predicciones sean exactamente los mismos que en el de etiquetas.
-        5. Fusionar ambos DataFrames por la columna 'id' para alinear las predicciones con las etiquetas verdaderas.
-        6. Calcular el score según el tipo de tarea:
+        1. Validar que el archivo contenga las columnas 'id' y 'target'.
+        2. Validar que el archivo de etiquetas verdaderas también tenga las columnas 'id' y 'target'.
+        3. Validar que los IDs en el archivo de predicciones sean exactamente los mismos que en el de etiquetas.
+        4. Fusionar ambos DataFrames por la columna 'id' para alinear las predicciones con las etiquetas verdaderas.
+        5. Calcular el score según el tipo de tarea:
            - Para clasificación, se usa F1-score ponderado.
            - Para regresión, se calcula MAPE (conversión para que mayor sea mejor).
         
         Parámetros:
-        - predictions_file: Ruta o archivo CSV con las predicciones del estudiante.
+        - predictions: archivo CSV con las predicciones del estudiante.
         - task_type: Tipo de tarea ('classification' o 'regression'). Por defecto es 'classification'.
         
         Retorna:
         - (score, mensaje_error): El score calculado y None si todo fue correcto, o 0 y un mensaje de error en caso de fallo.
         """
-        # 1. Cargar las predicciones del estudiante
-        try:
-            predictions = pd.read_csv(predictions_file)
-        except Exception as e:
-            return 0, f"Error al leer el archivo de predicciones: {str(e)}"
-        
-        # 2. Verificar que las predicciones tengan las columnas necesarias
+
+        # 1. Verificar que las predicciones tengan las columnas necesarias
         valid, msg = self.validate_columns(predictions, ['id', 'target'])
         if not valid:
             return 0, f"El archivo de predicciones debe tener columnas 'id' y 'target'. {msg}"
         predictions.drop_duplicates(subset="id", inplace=True)
         
 
-        # 3. Verificar que las etiquetas verdaderas tengan las columnas necesarias
+        # 2. Verificar que las etiquetas verdaderas tengan las columnas necesarias
         valid, msg = self.validate_columns(self.true_labels, ['id', 'target'])
         if not valid:
             return 0, f"El archivo de etiquetas verdaderas debe tener columnas 'id' y 'target'. {msg}"
         
-        # 4. Validar que los IDs en el archivo de predicciones sean exactamente los mismos que en el de etiquetas
+        # 3. Validar que los IDs en el archivo de predicciones sean exactamente los mismos que en el de etiquetas
         valid, msg = self.validate_ids(predictions)
         if not valid:
             return 0, msg
         
-        # 5. Fusionar los DataFrames por la columna 'id'
+        # 4. Fusionar los DataFrames por la columna 'id'
         merged = predictions.merge(
             right=self.true_labels,
             how='right',
@@ -112,7 +106,7 @@ class PredictionEvaluator:
         if len(merged) == 0:
             return 0, "No se encontraron coincidencias entre los IDs."
         
-        # 6. Calcular el score basado en el tipo de tarea
+        # 5. Calcular el score basado en el tipo de tarea
         try:
             if task_type == 'classification':
                 score = f1_score(merged['target_true'], merged['target_pred'], average='weighted')

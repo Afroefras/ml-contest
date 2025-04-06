@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
@@ -48,7 +49,7 @@ def index():
         try:
             student_name = students[student_id]
         except KeyError:
-            flash(f'El número de registro {student_id} no está registrado en esta clase.')
+            flash(f'El número de registro "{student_id}" no está registrado en esta clase.')
             return redirect(url_for('index'))
         
         # Verificar si se subió un archivo
@@ -61,19 +62,24 @@ def index():
             flash('No se ha seleccionado ningún archivo.')
             return redirect(url_for('index'))
         
-        # Guardar el archivo
         if file:
-            filename = secure_filename(f"{student_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{student_name}.csv")
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
+            try:
+                predictions = pd.read_csv(file)
+            except Exception as e:
+                return 0, f"Error al leer el archivo de predicciones: {str(e)}"
             
             # Evaluar predicciones
             pe = PredictionEvaluator(true_labels_path='true_labels.csv')
-            score, error = pe.evaluate_predictions(filepath, task_type='classification')
+            score, error = pe.evaluate_predictions(predictions, task_type='classification')
             
             if error:
                 flash(f'Error: {error}')
                 return redirect(url_for('index'))
+            
+            # Guardar el archivo
+            filename = secure_filename(f"{student_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{student_name}.csv")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            predictions.to_csv(filepath, index=False)
             
             # Guardar en la base de datos
             submission = Submission(
