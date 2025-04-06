@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
-from eval_predictions import PredictionEvaluator
+from eval_predictions import PredictionEvaluator, load_students
 from flask import Flask, render_template, request, redirect, url_for, flash
 
 app = Flask(__name__)
@@ -19,22 +19,31 @@ db = SQLAlchemy(app)
 # Definir el modelo para la base de datos
 class Submission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    student_name = db.Column(db.String(100), nullable=False)
+    student_id = db.Column(db.Integer, nullable=False)
     filename = db.Column(db.String(100), nullable=False)
     score = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f'<Submission {self.student_name}>'
+        return f'<Submission {self.student_id}>'
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         # Verificar si se proporcionó un nombre
-        student_name = request.form.get('student_name')
-        if not student_name:
-            flash('Por favor, ingresa tu nombre.')
+        student_id = request.form.get('student_id')
+        if not student_id:
+            flash('Ingresa tu número de registro.')
             return redirect(url_for('index'))
+
+        try:
+            student_id = int(student_id)
+        except ValueError:
+            flash('El número de registro debe ser un entero.')
+            return redirect(url_for('index'))
+        
+        students = load_students(csv_path='students.csv')
+
         
         # Verificar si se subió un archivo
         if 'file' not in request.files:
@@ -48,7 +57,7 @@ def index():
         
         # Guardar el archivo
         if file:
-            filename = secure_filename(f"{student_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+            filename = secure_filename(f"{student_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
             
@@ -62,7 +71,7 @@ def index():
             
             # Guardar en la base de datos
             submission = Submission(
-                student_name=student_name,
+                student_id=student_id,
                 filename=filename,
                 score=score
             )

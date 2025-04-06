@@ -1,3 +1,4 @@
+import csv
 import pandas as pd
 from sklearn.metrics import f1_score, mean_absolute_percentage_error
 
@@ -129,3 +130,13 @@ class PredictionEvaluator:
             return score, None
         except Exception as e:
             return 0, f"Error al calcular el score: {str(e)}"
+
+
+def load_students(csv_path: str):
+    alumnos = {}
+    with open(csv_path, 'r', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            # Supongamos que en el CSV tienes columnas 'registration_number' y 'name'
+            alumnos[int(row['registration_number'])] = row['name']
+    return alumnos
