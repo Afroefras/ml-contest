@@ -20,6 +20,7 @@ db = SQLAlchemy(app)
 class Submission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, nullable=False)
+    student_name = db.Column(db.String(100), nullable=False)
     filename = db.Column(db.String(100), nullable=False)
     score = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -44,6 +45,11 @@ def index():
         
         students = load_students(csv_path='students.csv')
 
+        try:
+            student_name = students[student_id]
+        except KeyError:
+            flash(f'El número de registro {student_id} no está registrado en esta clase.')
+            return redirect(url_for('index'))
         
         # Verificar si se subió un archivo
         if 'file' not in request.files:
@@ -57,7 +63,7 @@ def index():
         
         # Guardar el archivo
         if file:
-            filename = secure_filename(f"{student_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+            filename = secure_filename(f"{student_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{student_name}.csv")
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
             
@@ -72,13 +78,14 @@ def index():
             # Guardar en la base de datos
             submission = Submission(
                 student_id=student_id,
+                student_name=student_name,
                 filename=filename,
                 score=score
             )
             db.session.add(submission)
             db.session.commit()
             
-            flash(f'¡Predicciones evaluadas con éxito! Tu score es: {score:.4f}')
+            flash(f'Muy bien, {student_name}! Tu score es: {score:.1%}')
             return redirect(url_for('index'))
     
     # Obtener el ranking

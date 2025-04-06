@@ -84,7 +84,7 @@
                                     <thead>
                                         <tr>
                                             <th>Posición</th>
-                                            <th>Número de registro</th>
+                                            <th>Nombre</th>
                                             <th>Score</th>
                                             <th>Fecha/Hora</th>
                                         </tr>
@@ -93,7 +93,7 @@
                                         {% for submission in submissions %}
                                             <tr>
                                                 <td>{{ loop.index }}</td>
-                                                <td>{{ submission.student_id }}</td>
+                                                <td>{{ submission.student_name }}</td>
                                                 <td>{{ "%.4f"|format(submission.score) }}</td>
                                                 <td>{{ submission.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                             </tr>
