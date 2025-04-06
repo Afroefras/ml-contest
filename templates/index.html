@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ML Competition Platform</title>
+    <title>Machine Learning Competition 2025-01</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -30,7 +30,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
         <div class="container">
-            <a class="navbar-brand" href="/">ML Competition Platform</a>
+            <a class="navbar-brand" href="/">Machine Learning Competition 2025-01</a>
         </div>
     </nav>
 
@@ -51,20 +51,20 @@
             <div class="col-md-12">
                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">Sube tus predicciones</h4>
+                        <h4 class="mb-0">Sube tus predicciones 🔮</h4>
                     </div>
                     <div class="card-body">
                         <form method="POST" enctype="multipart/form-data" class="submission-form">
                             <div class="mb-3">
-                                <label for="student_name" class="form-label">Tu Nombre:</label>
-                                <input type="text" class="form-control" id="student_name" name="student_name" required>
+                                <label for="student_id" class="form-label">Tu número de registro, plox:</label>
+                                <input type="text" class="form-control" id="student_id" name="student_id" required>
                             </div>
                             <div class="mb-3">
                                 <label for="file" class="form-label">Archivo CSV con predicciones:</label>
                                 <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
-                                <div class="form-text">El archivo debe tener columnas 'id' y 'target'.</div>
+                                <div class="form-text">El archivo sólo debe tener columnas 'id' y 'target'.</div>
                             </div>
-                            <button type="submit" class="btn btn-primary">Enviar Predicciones</button>
+                            <button type="submit" class="btn btn-primary">Competir!</button>
                         </form>
                     </div>
                 </div>
@@ -75,7 +75,7 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header bg-success text-white">
-                        <h4 class="mb-0">Ranking de Participantes</h4>
+                        <h4 class="mb-0">Ranking⚡</h4>
                     </div>
                     <div class="card-body">
                         {% if submissions %}
@@ -85,8 +85,11 @@
                                         <tr>
                                             <th>Posición</th>
                                             <th>Nombre</th>
-                                            <th>Score</th>
-                                            <th>Fecha/Hora</th>
+                                            <th>Max Score</th>
+                                            <th>Min Score</th>
+                                            <th>Avg Score</th>
+                                            <th>Archivos</th>
+                                            <th>Último archivo</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -94,8 +97,11 @@
                                             <tr>
                                                 <td>{{ loop.index }}</td>
                                                 <td>{{ submission.student_name }}</td>
-                                                <td>{{ "%.4f"|format(submission.score) }}</td>
-                                                <td>{{ submission.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                                <td>{{ "%.4f"|format(submission.max_score) }}</td>
+                                                <td>{{ "%.4f"|format(submission.min_score) }}</td>
+                                                <td>{{ "%.4f"|format(submission.avg_score) }}</td>
+                                                <td>{{ "%.0f"|format(submission.score_count) }}</td>
+                                                <td>{{ submission.last_update_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
@@ -103,7 +109,7 @@
                             </div>
                         {% else %}
                             <div class="alert alert-info">
-                                Aún no hay envíos. ¡Sé el primero en participar!
+                                Aún no hay envíos. Eres primis!
                             </div>
                         {% endif %}
                     </div>
@@ -114,7 +120,7 @@
 
     <footer class="footer">
         <div class="container">
-            <p class="text-muted">ML Competition Platform © {{ year }}</p>
+            <p class="text-muted">Machine Learning Competition 2025-01 © {{ year }}</p>
         </div>
     </footer>
 
