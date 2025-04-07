@@ -7,14 +7,15 @@ from datetime import datetime
 from flask_wtf.csrf import CSRFProtect
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
-from eval_predictions import PredictionEvaluator, load_students
 from flask import Flask, render_template, request, redirect, url_for, flash
+from eval_predictions import PredictionEvaluator, load_students, allowed_file
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///submissions.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key')
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2 MB
 
 csrf = CSRFProtect(app)
 
@@ -82,6 +83,10 @@ def index():
         file = request.files['file']
         if file.filename == '':
             flash('No se ha seleccionado ningún archivo.')
+            return redirect(url_for('index'))
+        
+        if not allowed_file(file.filename):
+            flash('El archivo debe tener extensión .csv')
             return redirect(url_for('index'))
         
         if file:

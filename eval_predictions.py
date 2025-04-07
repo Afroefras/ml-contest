@@ -134,3 +134,7 @@ def load_students(csv_path: str):
             # Supongamos que en el CSV tienes columnas 'registration_number' y 'name'
             alumnos[int(row['registration_number'])] = row['name']
     return alumnos
+
+
+def allowed_file(filename: str) -> bool:
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'csv'
