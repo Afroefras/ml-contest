@@ -1,6 +1,7 @@
 import os
 import pytz
 import pandas as pd
+import flask_limiter as fl
 from sqlalchemy import func
 from datetime import datetime
 from flask_wtf.csrf import CSRFProtect
@@ -20,6 +21,21 @@ csrf = CSRFProtect(app)
 # Asegúrate de que la carpeta de uploads exista
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Limitar el tráfico de una misma IP
+limiter = fl.Limiter(
+    key_func=fl.util.get_remote_address,
+    app=app,
+    default_limits=[
+        "50 per day",
+        "10 per hour",
+        "20 per minute",
+    ]
+)
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return render_template("too_many_requests.html"), 429
+
 db = SQLAlchemy(app)
 
 # Definir el modelo para la base de datos
@@ -35,6 +51,7 @@ class Submission(db.Model):
         return f'<Submission {self.student_id}>'
 
 @app.route('/', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])
 def index():
     if request.method == 'POST':
         # Verificar si se proporcionó un nombre
