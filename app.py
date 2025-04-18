@@ -1,56 +1,36 @@
 import os
-import pytz
-import pandas as pd
-import flask_limiter as fl
+from config import *
+from models import Submission
+from extensions import db, csrf, limiter
+
 from sqlalchemy import func
-from datetime import datetime
-from flask_wtf.csrf import CSRFProtect
-from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, flash
+
+import pytz
+import pandas as pd
+from datetime import datetime
 from eval_predictions import PredictionEvaluator, load_students, allowed_file
 
+# Crear la app
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///submissions.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key')
-app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2 MB
 
-csrf = CSRFProtect(app)
+# Cargar la configuración ANTES de instanciar SQLAlchemy
+app.config.from_object('config')
+
+db.init_app(app)
+csrf.init_app(app)
+limiter.init_app(app)
 
 # Asegúrate de que la carpeta de uploads exista
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Limitar el tráfico de una misma IP
-limiter = fl.Limiter(
-    key_func=fl.util.get_remote_address,
-    app=app,
-    default_limits=[
-        "50 per day",
-        "10 per hour",
-        "20 per minute",
-    ]
-)
-
+# Manejo de muchos requests
 @app.errorhandler(429)
 def ratelimit_handler(e):
     return render_template("too_many_requests.html"), 429
 
-db = SQLAlchemy(app)
-
-# Definir el modelo para la base de datos
-class Submission(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    student_id = db.Column(db.Integer, nullable=False)
-    student_name = db.Column(db.String(100), nullable=False)
-    filename = db.Column(db.String(100), nullable=False)
-    score = db.Column(db.Float, nullable=False)
-    timestamp = db.Column(db.DateTime, nullable=False)
-
-    def __repr__(self):
-        return f'<Submission {self.student_id}>'
-
+# Lógica de index.html
 @app.route('/', methods=['GET', 'POST'])
 @limiter.limit("5 per minute", methods=["POST"])
 def index():
@@ -140,16 +120,13 @@ def index():
     
     return render_template('index.html', submissions=submissions)
 
+
 @app.route('/health')
 def health():
     """Endpoint para verificar que la aplicación está funcionando"""
     return {'status': 'ok'}
 
-def create_tables():
-    with app.app_context():
-        db.create_all()
 
-# Llamamos a la función explícitamente antes de ejecutar la app
 if __name__ == '__main__':
-    create_tables()  # Crear tablas antes de iniciar la app
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)

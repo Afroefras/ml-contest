@@ -23,8 +23,8 @@ RUN pipenv install --deploy --system
 # Asegúrate de que la carpeta de uploads exista
 RUN mkdir -p uploads
 
-# Expone el puerto 5000
-EXPOSE 5000
+# Expone el puerto 8080
+EXPOSE 8080
 
 # Comando para ejecutar la aplicación
 CMD ["python", "app.py"]
