@@ -118,21 +118,21 @@ def index():
             flash(f'Muy bien, {student_name}! Tu score es: {score:.1%}')
             return redirect(url_for('index'))
     
-    # Obtener el ranking
-    submissions = db.session.query(
-        Submission.student_name,
-        func.max(Submission.score).label('max_score'),
-        func.min(Submission.score).label('min_score'),
-        func.avg(Submission.score).label('avg_score'),
-        func.count(Submission.score).label('score_count'),
-        func.max(Submission.timestamp).label('last_update_at')
-    ).group_by(Submission.student_name).order_by(
-            func.max(Submission.score).desc(),
-            func.count(Submission.score).asc(),
-            func.min(Submission.score).desc(),
-            func.max(Submission.timestamp).asc()
-        ).all()
-    
+    # # Obtener el ranking
+    # submissions = db.session.query(
+    #     Submission.student_name,
+    #     func.max(Submission.score).label('max_score'),
+    #     func.min(Submission.score).label('min_score'),
+    #     func.avg(Submission.score).label('avg_score'),
+    #     func.count(Submission.score).label('score_count'),
+    #     func.max(Submission.timestamp).label('last_update_at')
+    # ).group_by(Submission.student_name).order_by(
+    #         func.max(Submission.score).desc(),
+    #         func.count(Submission.score).asc(),
+    #         func.min(Submission.score).desc(),
+    #         func.max(Submission.timestamp).asc()
+    #     ).all()
+    submissions = []
     return render_template('index.html', submissions=submissions)
 
 
