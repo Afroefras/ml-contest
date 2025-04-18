@@ -17,10 +17,25 @@ app = Flask(__name__)
 
 # Cargar la configuración ANTES de instanciar SQLAlchemy
 app.config.from_object('config')
+print(f"DATABASE_URL configurado como: {app.config['SQLALCHEMY_DATABASE_URI']}")
+print(f"Tipo de base de datos: {app.config['SQLALCHEMY_DATABASE_URI'].split('://')[0] if app.config['SQLALCHEMY_DATABASE_URI'] else 'None'}")
 
+# Primero inicializa las extensiones
 db.init_app(app)
 csrf.init_app(app)
 limiter.init_app(app)
+
+# Y después intenta la conexión
+with app.app_context():
+    try:
+        db.engine.connect()
+        print("¡Conexión a la base de datos establecida con éxito!")
+        # Verifica si la tabla existe
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        print(f"Tablas existentes: {inspector.get_table_names()}")
+    except Exception as e:
+        print(f"Error al conectar a la base de datos: {e}")
 
 # Asegúrate de que la carpeta de uploads exista
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
