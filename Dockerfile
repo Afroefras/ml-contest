@@ -27,4 +27,4 @@ RUN mkdir -p uploads
 EXPOSE 8080
 
 # Comando para ejecutar la aplicación
-CMD ["python", "app.py"]
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:8080"]
