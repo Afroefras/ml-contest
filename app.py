@@ -1,37 +1,53 @@
 import os
-import pytz
-import pandas as pd
+from config import *
+from models import Submission
+from extensions import db, csrf, limiter
+
 from sqlalchemy import func
-from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
-from eval_predictions import PredictionEvaluator, load_students
 from flask import Flask, render_template, request, redirect, url_for, flash
 
+import pytz
+import pandas as pd
+from datetime import datetime
+from eval_predictions import PredictionEvaluator, load_students, allowed_file
+
+# Crear la app
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///submissions.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['SECRET_KEY'] = 'tu_clave_secreta'  # Necesario para flash messages
+
+# Cargar la configuración ANTES de instanciar SQLAlchemy
+app.config.from_object('config')
+print(f"DATABASE_URL configurado como: {app.config['SQLALCHEMY_DATABASE_URI']}")
+print(f"Tipo de base de datos: {app.config['SQLALCHEMY_DATABASE_URI'].split('://')[0] if app.config['SQLALCHEMY_DATABASE_URI'] else 'None'}")
+
+# Primero inicializa las extensiones
+db.init_app(app)
+csrf.init_app(app)
+limiter.init_app(app)
+
+# Y después intenta la conexión
+with app.app_context():
+    try:
+        db.engine.connect()
+        print("¡Conexión a la base de datos establecida con éxito!")
+        # Verifica si la tabla existe
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        print(f"Tablas existentes: {inspector.get_table_names()}")
+    except Exception as e:
+        print(f"Error al conectar a la base de datos: {e}")
 
 # Asegúrate de que la carpeta de uploads exista
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-db = SQLAlchemy(app)
+# Manejo de muchos requests
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return render_template("too_many_requests.html"), 429
 
-# Definir el modelo para la base de datos
-class Submission(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    student_id = db.Column(db.Integer, nullable=False)
-    student_name = db.Column(db.String(100), nullable=False)
-    filename = db.Column(db.String(100), nullable=False)
-    score = db.Column(db.Float, nullable=False)
-    timestamp = db.Column(db.DateTime, nullable=False)
-
-    def __repr__(self):
-        return f'<Submission {self.student_id}>'
-
+# Lógica de index.html
 @app.route('/', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])
 def index():
     if request.method == 'POST':
         # Verificar si se proporcionó un nombre
@@ -62,6 +78,10 @@ def index():
         file = request.files['file']
         if file.filename == '':
             flash('No se ha seleccionado ningún archivo.')
+            return redirect(url_for('index'))
+        
+        if not allowed_file(file.filename):
+            flash('El archivo debe tener extensión .csv')
             return redirect(url_for('index'))
         
         if file:
@@ -115,16 +135,13 @@ def index():
     
     return render_template('index.html', submissions=submissions)
 
+
 @app.route('/health')
 def health():
     """Endpoint para verificar que la aplicación está funcionando"""
     return {'status': 'ok'}
 
-def create_tables():
-    with app.app_context():
-        db.create_all()
 
-# Llamamos a la función explícitamente antes de ejecutar la app
 if __name__ == '__main__':
-    create_tables()  # Crear tablas antes de iniciar la app
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
